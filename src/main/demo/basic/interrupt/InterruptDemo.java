@@ -22,10 +22,11 @@ public class InterruptDemo {
                         Thread.sleep(2000);
                     } catch (InterruptedException e) {
                         System.out.println(Thread.currentThread().getName() + " interrupted when sleep !");
-                        //中断一场会清空中断标志，故再次加上中断标志
+                        //中断异常会清空中断标志，故再次加上中断标志
                         Thread.currentThread().interrupt();
                     }
 
+                    //线程调用yield方法表示要释放CPU时间片，重新抢占CPU，有可能再次抢上有可能抢不上
                     yield();
                 }
             }
