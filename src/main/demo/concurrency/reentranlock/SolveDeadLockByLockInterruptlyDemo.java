@@ -3,9 +3,9 @@ package demo.concurrency.reentranlock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * @descripte 通过重入锁来解决死锁问题
+ * @descripte 通过重入锁lockInterruptibly方法加锁来解决死锁问题
  */
-public class SolveDeadLockDemo {
+public class SolveDeadLockByLockInterruptlyDemo {
     private static LockObject readLock = new LockObject("readlock");
     private static LockObject writeLock = new LockObject("writeLock");
 
