@@ -42,6 +42,7 @@ public class CountDownLatchDemo {
         //计数器await将主线程阻塞，等待所有计数器中的计数减为0
         count.await();
         System.out.println(System.currentTimeMillis() + " " + Thread.currentThread().getId() + " finished! ");
+        executorService.shutdown();
     }
 
     public static void main(String[] args) throws InterruptedException {
