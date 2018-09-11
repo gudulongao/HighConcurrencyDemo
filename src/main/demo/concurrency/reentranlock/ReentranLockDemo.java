@@ -28,8 +28,8 @@ public class ReentranLockDemo implements Runnable {
         Thread t1 = new Thread(demo);
         Thread t2 = new Thread(demo);
         t1.start();
-        t2.start();
         t1.join();
+        t2.start();
         t2.join();
         System.out.println(ReentranLockDemo.i);
     }

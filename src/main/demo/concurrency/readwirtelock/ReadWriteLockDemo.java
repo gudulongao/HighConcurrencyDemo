@@ -51,12 +51,14 @@ public class ReadWriteLockDemo {
         WriteRunnable writeRunnable = new WriteRunnable();
 
         for (int i = 0; i < 18; i++) {
-            new Thread(writeRunnable).start();
+            new Thread(readRunnable).start();
         }
 
         for (int i = 0; i < 18; i++) {
-            new Thread(readRunnable).start();
+            new Thread(writeRunnable).start();
         }
+
+
 
 
     }

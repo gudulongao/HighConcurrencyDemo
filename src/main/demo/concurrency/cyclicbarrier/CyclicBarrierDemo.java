@@ -7,12 +7,21 @@ import java.util.concurrent.Executors;
 
 /**
  * @descripte 循环栅栏样例
+ * <p>
+ *     循环栅栏，包含对多线程并发任务计数，暂停所有线程运行，执行特别栅栏任务，再恢复多线程任务执行的功能
+ * </p>
  */
 public class CyclicBarrierDemo {
-    class SoldierRunnable implements Runnable {
+    /**
+     * 多线程任务
+     */
+    class MultiThreadTask implements Runnable {
+        /**
+         * 多线程任务共享一个循环栅栏
+         */
         private CyclicBarrier cyclic = null;
 
-        public SoldierRunnable(CyclicBarrier cyclic) {
+        public MultiThreadTask(CyclicBarrier cyclic) {
             this.cyclic = cyclic;
         }
 
@@ -20,10 +29,13 @@ public class CyclicBarrierDemo {
         public void run() {
             try {
                 /**
-                 * @see 个人感觉，循环栅栏其实就是控制使用了该栅栏的所有线程，当栅栏await时，阻塞所有线程，去执行栅栏任务，栅栏可以多次await来执行栅栏任务
+                 * 由于所有多线程任务都共享一个栅栏，即每个线程运行到此，
+                 * 都会将当前线程添加到同一个栅栏的等待线程队列中。同时栅栏还有一个计数器功能。
+                 * 每当一个线程进入栅栏的线程等待队列之后，计数器减1，等阻挡的线程数足够之后，会执行栅栏任务。
+                 * 即多线程运行到了栅栏处被阻挡被迫停止运行了。等到阻挡的足够多了之后，执行栅栏任务。
                  */
-                //循环栅栏调用await时，所有的线程都会阻塞，去执行循环栅栏中的栅栏代码
                 cyclic.await();
+                //当栅栏任务执行完毕之后，所有暂停的线程恢复执行。
                 Thread.sleep(1000);
                 System.out.println(System.currentTimeMillis() + " " + Thread.currentThread().getId() + " done ");
                 //循环栅栏再次调用await，会继续阻塞所有线程，再次执行栅栏中的代码
@@ -49,11 +61,11 @@ public class CyclicBarrierDemo {
             this.num = num;
         }
 
+        /**
+         * 当阻挡的线程达到计数的预期数，之后会执行到此的栅栏任务。栅栏任务执行完毕会恢复所有栅栏等待线程队列中的所有线程
+         */
         @Override
         public void run() {
-            /**
-             * 为了让多次执行栅栏任务有不同的效果用了flag来区分
-             */
             if (flag) {
                 System.out.println(System.currentTimeMillis() + " [" + num + "] start ");
                 flag = false;
@@ -65,11 +77,13 @@ public class CyclicBarrierDemo {
     }
 
     public void test() {
-        //构造循环栅栏，参数有用于统计线程数的数据，还有在循环栅栏await需要执行的栅栏代码
+        /**
+         * 构造栅栏，10代码栅栏可以拦截的线程数，后一个是当达到拦截线程数之后执行的栅栏任务
+         */
         CyclicBarrier cyclicBarrier = new CyclicBarrier(10, new BarriderRunnable(true, 10));
-        SoldierRunnable soldierRunnable = new SoldierRunnable(cyclicBarrier);
+        MultiThreadTask soldierRunnable = new MultiThreadTask(cyclicBarrier);
         ExecutorService executorService = Executors.newFixedThreadPool(20);
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 15; i++) {
             new Thread(soldierRunnable).start();
         }
 

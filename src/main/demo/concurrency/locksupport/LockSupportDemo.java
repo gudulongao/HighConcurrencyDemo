@@ -26,7 +26,7 @@ public class LockSupportDemo {
                 }
                 System.out.println(System.currentTimeMillis() + " " + Thread.currentThread().getName() + " park ");
                 /**
-                 * @see park方法等同于有一个信号量为1的机制，如果这个许可本身可用，则park会立即返回，不会阻塞，如果许可不可用，则会阻塞到LockSupport.unPork方法。
+                 * @see park方法等同于有一个信号量为1的机制，如果这个许可本身可用，则park会立即返回，不会阻塞，如果许可不可用，则会阻塞直到LockSupport.unPork方法。
                  * 当第一次调用park方法时会阻塞，直到调用unpark方法，如果先执行了unpark方法，则后面的park方法会立即返回，即unpark方法后面一次的park方法会立即返回不会阻塞
                  */
                 LockSupport.park();
