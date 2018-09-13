@@ -9,16 +9,10 @@ public class ErrStackDemo {
     private ExecutorService executorService = null;
 
     class TaskDemo implements Runnable {
-        private int a, b;
-
-        public TaskDemo(int a, int b) {
-            this.a = a;
-            this.b = b;
-        }
 
         @Override
         public void run() {
-            System.out.println(a / b);
+            System.out.println(10 / 0);
         }
     }
 
@@ -28,9 +22,9 @@ public class ErrStackDemo {
     public void testWithSubmit() {
         System.out.println("test with submit begin ");
         executorService = new ThreadPoolExecutor(0, 5, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<Runnable>(10));
-        for (int i = 0; i < 5; i++) {
-            executorService.submit(new TaskDemo(100, i));
-        }
+//        for (int i = 0; i < 5; i++) {
+        executorService.submit(new TaskDemo());
+//        }
 
         executorService.shutdown();
     }
@@ -41,9 +35,7 @@ public class ErrStackDemo {
     public void testWithExecute() {
         System.out.println("test with execute begin ");
         executorService = new ThreadPoolExecutor(0, 5, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<Runnable>(10));
-        for (int i = 0; i < 5; i++) {
-            executorService.execute(new TaskDemo(100, i));
-        }
+        executorService.execute(new TaskDemo());
 
         executorService.shutdown();
     }
@@ -58,10 +50,8 @@ public class ErrStackDemo {
         System.out.println("test with future begin ");
         executorService = new ThreadPoolExecutor(0, 5, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<Runnable>(10));
         Future future = null;
-        for (int i = 0; i < 5; i++) {
-            future = executorService.submit(new TaskDemo(100, i));
-            future.get();
-        }
+        future = executorService.submit(new TaskDemo());
+        future.get();
 
         executorService.shutdown();
     }
@@ -74,17 +64,19 @@ public class ErrStackDemo {
             super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
         }
 
-        @Override
-        public Future<?> submit(Runnable task) {
-            return super.submit(warp(task, Thread.currentThread().getId()));
-        }
+
 
         @Override
         public void execute(Runnable command) {
             super.execute(warp(command, Thread.currentThread().getId()));
         }
 
-        private Runnable warp(final Runnable runnable, final long threadID) {
+        @Override
+        public Future<?> submit(Runnable task) {
+            return super.submit(warp(task, Thread.currentThread().getId()));
+        }
+
+        private Runnable warp(final Runnable runnable, final long threadID){
             return new Runnable() {
                 @Override
                 public void run() {
@@ -92,7 +84,6 @@ public class ErrStackDemo {
                         runnable.run();
                     } catch (Exception e) {
                         new Exception("MyThreadPool occured a exception at " + threadID).printStackTrace();
-                        e.printStackTrace();
                     }
                 }
             };
@@ -101,9 +92,7 @@ public class ErrStackDemo {
 
     public void testWithMyThreadPool() {
         MyThreadPool pool = new MyThreadPool(0, 5, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<Runnable>(10));
-        for (int i = 0; i < 5; i++) {
-            pool.submit(new TaskDemo(100, i));
-        }
+        pool.submit(new TaskDemo());
 
         pool.shutdown();
     }
@@ -111,9 +100,7 @@ public class ErrStackDemo {
     public static void main(String[] args) throws InterruptedException, ExecutionException {
         ErrStackDemo demo = new ErrStackDemo();
 //        demo.testWithSubmit();
-//        Thread.sleep(5000);
 //        demo.testWithExecute();
-//        Thread.sleep(5000);
 //        demo.testWithFuture();
         demo.testWithMyThreadPool();
     }
