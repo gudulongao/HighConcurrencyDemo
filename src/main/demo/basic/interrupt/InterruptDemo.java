@@ -1,9 +1,16 @@
 package demo.basic.interrupt;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * 中断
  */
 public class InterruptDemo {
+
+    /**
+     * 测试线程的中断
+     */
+    @SuppressWarnings("AlibabaAvoidManuallyCreateThread")
     public static void testInterruped() throws InterruptedException {
         Thread thread = new Thread() {
             @Override
@@ -37,7 +44,122 @@ public class InterruptDemo {
         thread.interrupt();//中断线程
     }
 
+    /**
+     * 测试同步锁与中断的关系
+     */
+    public static void testSynchronizedInterrupt() {
+        final Object lock = new Object();
+        SynchronizedThread target = new SynchronizedThread(lock);
+        Thread th1 = new Thread(target);
+        Thread th2 = new Thread(target);
+
+        System.out.println(th1.getName() + " start ...");
+        th1.start();
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println(th2.getName() + " start ...");
+        th2.start();
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("interrupt " + th2.getName());
+        th2.interrupt();
+    }
+
+    /**
+     * 测试重入锁与中断的关系
+     */
+    public static void testReentrantLockInterrupt() {
+        final ReentrantLock lock = new ReentrantLock();
+        ReentrantLockThread target = new ReentrantLockThread(lock);
+        Thread th1 = new Thread(target);
+        Thread th2 = new Thread(target);
+
+        System.out.println(th1.getName() + " start ...");
+        th1.start();
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println(th2.getName() + " start ...");
+        th2.start();
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("interrupt " + th2.getName());
+        th2.interrupt();
+    }
+
+    /**
+     * 基于同步锁的线程执行因子
+     */
+    static class SynchronizedThread implements Runnable {
+        private final Object lock;
+
+        public SynchronizedThread(Object lock) {
+            this.lock = lock;
+        }
+
+        @Override
+        public void run() {
+            String name = Thread.currentThread().getName();
+            System.out.println(name + " wait for lock...");
+            //线程1先获取锁，之后sleep的作用是让线程1一直保有锁
+            synchronized (lock) {
+                System.out.println(name + " get lock!");
+                try {
+                    Thread.sleep(8000);
+                } catch (InterruptedException e) {
+                    System.out.println(name + " interrupted !");
+                }
+                System.out.println(name + " done!");
+            }
+
+        }
+    }
+
+    static class ReentrantLockThread implements Runnable {
+        private ReentrantLock lock;
+
+        public ReentrantLockThread(ReentrantLock lock) {
+            this.lock = lock;
+        }
+
+        @Override
+        public void run() {
+            String name = Thread.currentThread().getName();
+            try {
+                System.out.println(name + " wait for lock...");
+                lock.lockInterruptibly();
+                System.out.println(name + " get lock!");
+                Thread.sleep(8000);
+            } catch (InterruptedException e) {
+                System.out.println(name + " interrupted!");
+            } finally {
+                if (lock.isHeldByCurrentThread()) {
+                    System.out.println(name + " release lock!");
+                    lock.unlock();
+                }
+            }
+            System.out.println(name + " done!");
+        }
+    }
+
     public static void main(String[] args) throws InterruptedException {
-        testInterruped();
+//        testInterruped();
+        testSynchronizedInterrupt();
+//        testReentrantLockInterrupt();
     }
 }

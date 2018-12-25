@@ -3,7 +3,7 @@ package demo.concurrency.reentranlock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * @descripte 通过重入锁lockInterruptibly方法加锁来解决死锁问题
+ * @author tanglei
  */
 public class SolveDeadLockByLockInterruptlyDemo {
     private static LockObject readLock = new LockObject("readlock");
@@ -63,15 +63,19 @@ public class SolveDeadLockByLockInterruptlyDemo {
      * 封装锁对象
      */
     static class LockObject {
-        //重入锁
+        /**
+         * 重入锁
+         */
         private ReentrantLock lock = new ReentrantLock();
-        //锁的名称
+        /**
+         * 锁的名称
+         */
         private String name = null;
 
         /**
          * 释放锁
          */
-        public void unLock() {
+        private void unLock() {
             //通过isHeldByCurrentThread方法来判断当前线程是否拥有该锁，拥有再释放
             if (lock.isHeldByCurrentThread()) {
                 System.out.println(System.currentTimeMillis() + " " + Thread.currentThread().getName() + " unlock " + name);
@@ -82,9 +86,8 @@ public class SolveDeadLockByLockInterruptlyDemo {
         /**
          * 可以处理中断事件的加锁，即当有线程在持有该锁的过程中遇到了中断事件，会抛出InterruptedException来进行中断响应
          *
-         * @throws InterruptedException
          */
-        public void lockWithInterrupt() throws InterruptedException {
+        private void lockWithInterrupt() throws InterruptedException {
             System.out.println(System.currentTimeMillis() + " " + Thread.currentThread().getName() + " wait " + name);
             lock.lockInterruptibly();
             System.out.println(System.currentTimeMillis() + " " + Thread.currentThread().getName() + " locked " + name);
@@ -102,7 +105,7 @@ public class SolveDeadLockByLockInterruptlyDemo {
         }
     }
 
-    public static void testSolveDeadLock() {
+    private static void testSolveDeadLock() {
         FirstThread firstThread = new FirstThread();
         AfterThread afterThread = new AfterThread();
         //先启动线程FirstThread

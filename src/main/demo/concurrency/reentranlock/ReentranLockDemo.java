@@ -12,12 +12,15 @@ public class ReentranLockDemo implements Runnable {
     @Override
     public void run() {
         for (int j = 0; j < 10000; j++) {
-            //手动加锁
+            //手动加锁®
+            lock.lock();
             lock.lock();
             try {
                 i++;
             } finally {
                 //必须手动释放锁
+                lock.unlock();
+                //多次加锁，释放时也需要匹配的多次释放
                 lock.unlock();
             }
         }
