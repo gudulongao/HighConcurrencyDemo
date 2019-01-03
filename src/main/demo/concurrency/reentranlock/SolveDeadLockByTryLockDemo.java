@@ -1,72 +1,80 @@
 package demo.concurrency.reentranlock;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * @escripte 通过重入锁的tryLock方法来加锁解决死锁问题
+ * @author tanglei
  */
 public class SolveDeadLockByTryLockDemo {
-    private static LockObject lock1 = new LockObject("A");
-    private static LockObject lock2 = new LockObject("B");
-
-    static class FirstThread extends Thread {
-        private boolean finishedFlag = false;
-
-        public FirstThread(String name) {
-            super(name);
-        }
-
-        @Override
-        public void run() {
-            while (!finishedFlag) {
-                if (lock1.tryLock()) {
-                    try {
-                        Thread.sleep(5000);
-                        if (lock2.tryLock()) {
-                            finishedFlag = true;
-                        }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } finally {
-                        lock1.unLock();
-                        lock2.unLock();
-                    }
-                }
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            System.out.println(System.currentTimeMillis() + " " + Thread.currentThread().getName() + " finished job!");
-        }
+    static enum Order {
+        A, B
     }
 
-    static class AfterThread extends Thread {
-        private boolean finishedFlag = false;
+    static class WorkThread extends Thread {
+        private LockObject resA;
+        private LockObject resB;
 
-        public AfterThread(String name) {
-            super(name);
+        private Order order;
+
+        public WorkThread(String name, Order order, LockObject resA, LockObject resB) {
+            super.setName(name);
+            this.order = order;
+            this.resA = resA;
+            this.resB = resB;
         }
 
         @Override
         public void run() {
-            while (!finishedFlag) {
-                if (lock2.tryLock()) {
-                    try {
-                        Thread.sleep(3000);
-                        if (lock1.tryLock()) {
-                            finishedFlag = true;
-                        }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } finally {
-                        lock1.unLock();
-                        lock2.unLock();
+            while (true) {
+                if (order == Order.A) {
+                    if (doBusinessWork(resA, resB)) {
+                        break;
+                    }
+                } else {
+                    if (doBusinessWork(resB, resA)) {
+                        break;
                     }
                 }
             }
-            System.out.println(System.currentTimeMillis() + " " + Thread.currentThread().getName() + " finished job!");
+        }
+
+        /**
+         * 业务处理 先获取先手资源，再获取后手资源，如果资源获取齐全，业务处理完毕
+         */
+        private boolean doBusinessWork(LockObject first, LockObject last) {
+            boolean flag = false;
+            try {
+                if (first.tryLock()) {
+                    workOnFirstRes();
+                    if (last.tryLock()) {
+                        workOnLastRes();
+                        flag = true;
+                        finish();
+                    }
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                first.unLock();
+                last.unLock();
+            }
+            return flag;
+        }
+
+        private void workOnFirstRes() throws InterruptedException {
+            Thread.sleep(1500);
+        }
+
+        private void workOnLastRes() throws InterruptedException {
+            Thread.sleep(1000);
+        }
+
+        private void finish() throws InterruptedException {
+            System.out.println(Thread.currentThread().getName() + " 开始绘画... ");
+            Thread.sleep(500);
+            System.out.println(Thread.currentThread().getName() + " 绘画完成! ");
         }
     }
 
@@ -81,33 +89,51 @@ public class SolveDeadLockByTryLockDemo {
             this.name = name;
         }
 
+        public String getName() {
+            return name;
+        }
+
         public void unLock() {
             if (lock.isHeldByCurrentThread()) {
-                System.out.println(System.currentTimeMillis() + " " + Thread.currentThread().getName() + " unlock " + name);
+                releaseRes();
                 lock.unlock();
             }
         }
 
         public boolean tryLock() {
-            /**
-             * @see tryLock无参调用的时候，线程会立即获取锁，如果拿到则返回true，否之则反，tryLock可以有参调用，意义为当无法立即拿到锁会等待长时间
-             */
+            waitRes();
             boolean flag = lock.tryLock();
             if (flag) {
-                System.out.println(System.currentTimeMillis() + " " + Thread.currentThread().getName() + " lock " + name + " success ");
-            } else {
-                System.out.println(System.currentTimeMillis() + " " + Thread.currentThread().getName() + " lock " + name + " failed ");
+                getRes();
             }
             return flag;
+        }
+
+        private void waitRes() {
+            System.out.println(Thread.currentThread().getName() + " 等着用 " + name);
+        }
+
+        private void getRes() {
+            System.out.println(Thread.currentThread().getName() + " 得到 " + name);
+        }
+
+        private void releaseRes() {
+            System.out.println(Thread.currentThread().getName() + " 用完 " + name);
         }
     }
 
     public static void testTryLockSolveDeadLock() {
-        FirstThread firstThread = new FirstThread("1");
-        AfterThread afterThread = new AfterThread("2");
-        firstThread.start();
-        afterThread.start();
+        LockObject resA = new LockObject("纸");
+        LockObject resB = new LockObject("笔");
+        WorkThread workA = new WorkThread("张三", Order.A, resA, resB);
+        WorkThread workB = new WorkThread("李四", Order.B, resA, resB);
+        workA.start();
+        workB.start();
+
+        String[] arr = new String[]{"a"};
+        Collections.addAll(Arrays.asList(arr),new String[]{"v"});
     }
+
 
     public static void main(String[] args) {
         testTryLockSolveDeadLock();

@@ -139,17 +139,19 @@ public class InterruptDemo {
 
         @Override
         public void run() {
-            String name = Thread.currentThread().getName();
+            Thread currThread = Thread.currentThread();
+            String name = currThread.getName();
             try {
-                System.out.println(name + " wait for lock...");
+                System.out.println(name + " wait for lock... interrupt flag:" + currThread.isInterrupted());
                 lock.lockInterruptibly();
                 System.out.println(name + " get lock!");
                 Thread.sleep(8000);
             } catch (InterruptedException e) {
-                System.out.println(name + " interrupted!");
+                currThread.interrupt();
+                System.out.println(name + " interrupted! interrupt flag:" + currThread.isInterrupted());
             } finally {
                 if (lock.isHeldByCurrentThread()) {
-                    System.out.println(name + " release lock!");
+                    System.out.println(name + " release lock! interrupt flag:" + currThread.isInterrupted());
                     lock.unlock();
                 }
             }
@@ -159,7 +161,7 @@ public class InterruptDemo {
 
     public static void main(String[] args) throws InterruptedException {
 //        testInterruped();
-        testSynchronizedInterrupt();
-//        testReentrantLockInterrupt();
+//        testSynchronizedInterrupt();
+        testReentrantLockInterrupt();
     }
 }

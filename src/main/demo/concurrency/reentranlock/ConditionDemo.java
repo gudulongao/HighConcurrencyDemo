@@ -4,27 +4,31 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * @descripte condition 样例 conditon的await和siginal与wait与notify类似
+ * @author tangleic
  */
 public class ConditionDemo {
+    /**
+     * 实例重入锁
+     */
     private static ReentrantLock lock = new ReentrantLock();
+    /**
+     * 基于重入锁获取Condition实例
+     */
     private static Condition condition = lock.newCondition();
 
     static class ThreadDemo extends Thread {
         @Override
         public void run() {
             try {
-                System.out.println(System.currentTimeMillis() + " " + Thread.currentThread().getId() + " get lock ");
+                //加锁
                 lock.lock();
-                System.out.println(System.currentTimeMillis() + " " + Thread.currentThread().getId() + " await ");
-                System.out.println(System.currentTimeMillis() + " " + Thread.currentThread().getId() + " release lock ");
+                //通过Condition使当前线程等待
                 condition.await();
-
-                System.out.println(System.currentTimeMillis() + " " + Thread.currentThread().getId() + " go on ");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } finally {
                 if (lock.isHeldByCurrentThread()) {
+                    //释放锁
                     lock.unlock();
                 }
             }
